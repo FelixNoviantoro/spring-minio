@@ -1,0 +1,56 @@
+version: "3.9"
+services:
+  app-minio:
+    build: .
+    container_name: app-minio
+    depends_on:
+      - postgresdb
+      - minio
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/postgres
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_DATASOURCE_READ_URL: jdbc:postgresql://db:5432/postgres
+      SPRING_DATASOURCE_READ_USERNAME: postgres
+      SPRING_DATASOURCE_READ_PASSWORD: password
+      SPRING_MINIO_URL: http://minio:9000
+      SPRING_MINIO_ACCESS_KEY: user
+      SPRING_MINIO_STORAGE_ACCOUNT_KEY: password
+      ORDER_HOST: http://app-order:8082
+
+  app-order:
+    image: noviantoro/spring-order
+    container_name: app-order
+    depends_on:
+      - postgresdb
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/postgres
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+
+  db:
+    image: postgres
+    container_name: db
+    ports:
+      - "5444:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9090:9090"
+    environment:
+      MINIO_ROOT_USER: user
+      MINIO_ROOT_PASSWORD: password
+    command: server /data --console-address ":9090"
+
